@@ -5,6 +5,7 @@ import socket
 import logging
 import paramiko
 import os
+from threading import Thread
 
 
 # ******************************************************************************
@@ -202,7 +203,7 @@ class SCHandler:
             stdin.write('''
                 tmux new -d -s '''
                         + str(tmux_name)
-                        + ''' /Users/dumi/PycharmProjects/untitled1/job.sh '''
+                        + ''' /Users/dumi/PycharmProjects/untitled3/job.sh '''
                         + str(port_assigned)
                         + ''' '''
                         + str(pid_assigned)
@@ -269,15 +270,20 @@ class SCServer:
 
     # ------------------------------------------------------------------------
     @staticmethod
-    def start_server():
+    def start_server_load():
         # --------------------------------------------------------------------
         httpd = HTTPServer(('localhost', 62223), HTTPHandler)
         httpd.serve_forever()
 
     # ------------------------------------------------------------------------
+    def start_server_thread(self):
+        # --------------------------------------------------------------------
+        Thread(target=self.start_server_load).start()
+
+    # ------------------------------------------------------------------------
     def main_class(self):
         # --------------------------------------------------------------------
-        self.start_server()
+        self.start_server_thread()
 
 # end SCServer class
 
@@ -286,11 +292,12 @@ class SCServer:
 # ------------------------------------------------------------------------
 def main():
     # --------------------------------------------------------------------
+
+    s = SCServer()
+    s.main_class()  # no wait -> to thread
+
     x = SCHandler()
     x.main_class()
-    
-    s = SCServer()
-    s.main_class()
 
 
 if __name__ == "__main__":

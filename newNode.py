@@ -30,7 +30,7 @@ class NDServer:
     """
 
     # ------------------------------------------------------------------------
-    def __init__(self, pid, port):
+    def __init__(self, port, pid):
         # --------------------------------------------------------------------
         self.port = int(port)
         self.pid = pid
@@ -117,10 +117,12 @@ class NDClient:
 # ------------------------------------------------------------------------
 def main(argv):
     # --------------------------------------------------------------------
+
     s = NDServer(sys.argv[1], sys.argv[2])  # arg1 port, arg2 pid
-    s.server_start()
+    s.main_class()
+
     c = NDClient()
-    c.client_start()
+    c.main_class()
 
 
 if __name__ == "__main__":
