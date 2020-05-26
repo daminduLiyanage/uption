@@ -1,71 +1,31 @@
 import requests
-from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 import sys
-
-
-# ==============================================================================
-# noinspection PyPep8Naming
-class HTTPHandler(BaseHTTPRequestHandler):
-    """
-        HTTP Request manager
-    """
-
-    # ------------------------------------------------------------------------
-    def do_GET(self):
-        # --------------------------------------------------------------------
-        if self.path == '/':    # return msg working with socket
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b'Hello, world!')
-
-        if self.path == '/requestID':   # requests for id
-            pass
+import time
+from conn import ConnectWithHTTP
 
 
 # ******************************************************************************
-class NDServer:
+class NDTalk:
     """
         All server functions and server replies
     """
+    master_id = None
 
     # ------------------------------------------------------------------------
     def __init__(self, port, pid):
         # --------------------------------------------------------------------
         self.port = int(port)
         self.pid = pid
-
-    # ------------------------------------------------------------------------
-    def server_thread_load(self):
-        # --------------------------------------------------------------------
-        httpd = HTTPServer(('localhost', self.port), HTTPHandler)
-        httpd.serve_forever()
-
-    # ------------------------------------------------------------------------
-    def server_start(self):
-        # --------------------------------------------------------------------
-        Thread(target=self.server_thread_load).start()
-
-    # ------------------------------------------------------------------------
-    def main_class(self):
-        # --------------------------------------------------------------------
-        self.server_start()
-
-# end NDServer class
-
-
-# ==============================================================================
-class NDClient:
-    """
-        All requests made
-    """
-
-    # ------------------------------------------------------------------------
-    def __init__(self):
-        # --------------------------------------------------------------------
         self.pid_list = None
         self.port_list = None
         self.read_reg_flag = False
+        self.server1 = ConnectWithHTTP(self.pid)
+
+    # ------------------------------------------------------------------------
+
+    def main_class_server(self, port):
+        self.server1.server_start(port)
 
     # ------------------------------------------------------------------------
     def read_registry(self):
@@ -93,24 +53,50 @@ class NDClient:
 
     # ------------------------------------------------------------------------
     @staticmethod
-    def client_thread_load():
+    def client_example():
         # --------------------------------------------------------------------
-        # payload = {'user_name': 'admin', 'password': 'password'}
-        r = requests.get('http://localhost:62223/oops')
-        print(r.url)
+        try:
+            # payload = {'user_name': 'admin', 'password': 'password'}
+            r = requests.get('http://localhost:62223/oops')
+            print(r.url)
+            print(r.text)
+        except Exception as e:
+            print("**Failed client_example method**\n")
+            print(e)
+
+    # ------------------------------------------------------------------------
+    @staticmethod
+    def ask_node_id(port):
+        # --------------------------------------------------------------------
+        url = 'http:/localhost:' + str(port) + "/requestID"
+        r = requests.get(url)
         print(r.text)
+        pid = int(r.text)
+        return pid
 
     # ------------------------------------------------------------------------
-    def client_start(self):
+    def bully(self, port_list):
         # --------------------------------------------------------------------
-        Thread(target=self.client_thread_load).start()
+        self.master_id = self.pid
+
+        max_id = self.master_id
+        while True:
+            time.sleep(20)
+            for each_port in port_list:
+                pid = self.ask_node_id(each_port)
+                if self.master_id > pid:
+                    max_id = pid
+            if self.pid > max_id:
+                max_id = self.pid
+            self.master_id = max_id
 
     # ------------------------------------------------------------------------
-    def main_class(self):
+    def main_class_client(self):
         # --------------------------------------------------------------------
-        self.client_start()
+        Thread(target=self.client_example).start()  # some e.g.
 
-# end NDClient class
+
+# end NDTalk class
 
 
 # ******************************************************************************
@@ -118,11 +104,9 @@ class NDClient:
 def main(argv):
     # --------------------------------------------------------------------
 
-    s = NDServer(sys.argv[1], sys.argv[2])  # arg1 port, arg2 pid
-    s.main_class()
-
-    c = NDClient()
-    c.main_class()
+    s = NDTalk(sys.argv[1], sys.argv[2])  # arg1 port, arg2 pid
+    s.main_class_server(s.port)
+   #  s.main_class_client()
 
 
 if __name__ == "__main__":
@@ -130,13 +114,13 @@ if __name__ == "__main__":
 
 # end main method
 
-    # def do_POST(self):
-    #     content_length = int(self.headers['Content-Length'])
-    #     body = self.rfile.read(content_length)
-    #     self.send_response(200)
-    #     self.end_headers()
-    #     response = BytesIO()
-    #     response.write(b'This is POST request. ')
-    #     response.write(b'Received: ')
-    #     response.write(body)
-    #     self.wfile.write(response.getvalue())
+# def do_POST(self):
+#     content_length = int(self.headers['Content-Length'])
+#     body = self.rfile.read(content_length)
+#     self.send_response(200)
+#     self.end_headers()
+#     response = BytesIO()
+#     response.write(b'This is POST request. ')
+#     response.write(b'Received: ')
+#     response.write(body)
+#     self.wfile.write(response.getvalue())
